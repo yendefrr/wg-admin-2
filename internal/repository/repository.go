@@ -9,12 +9,15 @@ import (
 )
 
 type Users interface {
+	Create(form models.UserCreateForm) error
 	GetAll() ([]models.User, error)
+	GetByUsername(username string) (*models.User, error)
 }
 
 type Profiles interface {
+	Create(form models.ProfileCreateForm) error
 	GetAll(IsActive bool) ([]models.Profile, error)
-	GetByID(id int) (models.Profile, error)
+	GetByID(id int) (*models.Profile, error)
 }
 type Repositories struct {
 	Users    Users

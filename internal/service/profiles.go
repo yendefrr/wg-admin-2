@@ -18,6 +18,9 @@ func NewProfilesService(repo repository.Profiles) *ProfilesService {
 }
 
 func (s *ProfilesService) Create(ctx context.Context, form models.ProfileCreateForm) error {
+	if err := s.repo.Create(form); err != nil {
+		return err
+	}
 
 	return nil
 }

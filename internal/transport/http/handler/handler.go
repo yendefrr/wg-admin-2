@@ -61,3 +61,11 @@ func (h *Handler) HandleProfiles(c *gin.Context) {
 		"inactive profile": profilesInA,
 	})
 }
+
+func (h *Handler) HandleCreateUser(c *gin.Context) {
+	
+}
+
+func (h *Handler) HandleCreateProfile(c *gin.Context) {
+
+}

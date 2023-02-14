@@ -8,6 +8,7 @@ import (
 
 type Users interface {
 	Create(ctx context.Context, form models.UserCreateForm) error
+	GetByUsername(ctx context.Context, username string) bool
 }
 
 type Profiles interface {
