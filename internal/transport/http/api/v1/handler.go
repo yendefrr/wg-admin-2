@@ -1,7 +1,7 @@
-package handler
+package v1
 
 import (
-	"html/template"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yendefrr/wg-admin/internal/models"
@@ -33,35 +33,49 @@ func (h *Handler) Init() *gin.Engine {
 }
 
 func (h *Handler) SetRoutes(router *gin.Engine) {
-	users := router.Group("/users")
+	api := router.Group("/v1")
 	{
-		users.POST("/create", h.HandleCreateUser)
-	}
+		debug := api.Group("/debug")
+		{
+			debug.GET("/ping", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{
+					"message": "pong",
+				})
+			})
+		}
 
-	profiles := router.Group("/profiles")
-	{
-		profiles.GET("/", h.HandleProfiles)
-		profiles.POST("/create", h.HandleCreateProfile)
+		users := api.Group("/users")
+		{
+			users.POST("/create", h.HandleCreateUser)
+		}
+
+		profiles := api.Group("/profiles")
+		{
+			profiles.GET("/", h.HandleProfiles)
+			profiles.POST("/create", h.HandleCreateProfile)
+		}
 	}
 }
 
 func (h *Handler) HandleProfiles(c *gin.Context) {
 	profilesA, err := h.profilesService.GetAllActive(c)
 	if err != nil {
-		return
+		c.JSON(http.StatusOK, gin.H{
+			"error": err.Error(),
+		})
 	}
 
 	profilesInA, err := h.profilesService.GetAllInActive(c)
 	if err != nil {
-		return
+		c.JSON(http.StatusOK, gin.H{
+			"error": err.Error(),
+		})
 	}
 
-	params := map[string]interface{}{}
-	params["profilesActive"] = profilesA
-	params["profilesInActive"] = profilesInA
-
-	t, _ := template.New("").Parse("")
-	t.Execute(c.Writer, params)
+	c.JSON(http.StatusOK, gin.H{
+		"active":   profilesA,
+		"inactive": profilesInA,
+	})
 }
 
 func (h *Handler) HandleCreateUser(c *gin.Context) {
@@ -72,11 +86,14 @@ func (h *Handler) HandleCreateUser(c *gin.Context) {
 	}
 
 	if err := h.usersService.Create(c, form); err != nil {
-		return
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 	}
 
-	t, _ := template.New("").Parse("")
-	t.Execute(c.Writer, nil)
+	c.JSON(http.StatusCreated, gin.H{
+		"error": nil,
+	})
 }
 
 func (h *Handler) HandleCreateProfile(c *gin.Context) {
@@ -86,9 +103,13 @@ func (h *Handler) HandleCreateProfile(c *gin.Context) {
 	}
 
 	if err := h.profilesService.Create(c, form); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	t, _ := template.New("").Parse("")
-	t.Execute(c.Writer, nil)
+	c.JSON(http.StatusCreated, gin.H{
+		"error": nil,
+	})
 }

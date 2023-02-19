@@ -1,27 +1,32 @@
 package mysqldb
 
 import (
-	"database/sql"
-	"fmt"
-
 	"github.com/yendefrr/wg-admin/internal/models"
+	"gorm.io/gorm"
 )
 
 type UsersRepo struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
-func NewUsersRepo(db *sql.DB) *UsersRepo {
+func NewUsersRepo(db *gorm.DB) *UsersRepo {
 	return &UsersRepo{
 		db: db,
 	}
 }
 
 func (r *UsersRepo) Create(form models.UserCreateForm) error {
-	r.db.QueryRow(fmt.Sprintf(
-		"INSERT INTO users (username, role) VALUES ('%s', '%s')", form.Username, form.Role))
+	user := models.User{
+		Username: form.Username,
+		Password: form.Password,
+		Role:     form.Role,
+	}
 
-	return r.db.QueryRow(fmt.Sprintf("SELECT `id` FROM `users` WHERE `username` = '%s'", form.Username)).Scan()
+	if res := r.db.Create(&user); res.RowsAffected != 1 {
+		return gorm.ErrInvalidTransaction
+	}
+
+	return nil
 }
 
 func (r *UsersRepo) GetAll() ([]models.User, error) {
@@ -30,19 +35,10 @@ func (r *UsersRepo) GetAll() ([]models.User, error) {
 }
 
 func (r *UsersRepo) GetByUsername(username string) (*models.User, error) {
-	u := &models.User{
-		Username: username,
-	}
-	if err := r.db.QueryRow(
-		fmt.Sprintf("SELECT `id`, `role` FROM `users` WHERE `username` = '%s'", username)).Scan(
-		&u.ID,
-		&u.Role,
-	); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, sql.ErrNoRows
-		}
+	u := &models.User{}
 
-		return nil, err
+	if res := r.db.Where("username = ?", username).Find(&u); res.RowsAffected != 1 {
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	return u, nil

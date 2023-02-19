@@ -1,9 +1,8 @@
 package repository
 
 import (
-	"database/sql"
-
 	"github.com/yendefrr/wg-admin/internal/models"
+	"gorm.io/gorm"
 
 	"github.com/yendefrr/wg-admin/internal/repository/mysqldb"
 )
@@ -24,7 +23,7 @@ type Repositories struct {
 	Profiles Profiles
 }
 
-func NewRepositories(db *sql.DB) *Repositories {
+func NewRepositories(db *gorm.DB) *Repositories {
 	return &Repositories{
 		Users:    mysqldb.NewUsersRepo(db),
 		Profiles: mysqldb.NewProfilesRepo(db),

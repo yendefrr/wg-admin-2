@@ -1,57 +1,48 @@
 package mysqldb
 
 import (
-	"database/sql"
-	"fmt"
-
 	"github.com/yendefrr/wg-admin/internal/models"
+	"gorm.io/gorm"
 )
 
 type ProfileRepo struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
-func NewProfilesRepo(db *sql.DB) *ProfileRepo {
+func NewProfilesRepo(db *gorm.DB) *ProfileRepo {
 	return &ProfileRepo{
 		db: db,
 	}
 }
 
 func (r *ProfileRepo) Create(form models.ProfileCreateForm) error {
-	if err := r.db.QueryRow(fmt.Sprintf("SELECT `id` FROM `users` WHERE `username` = '%s'", form.Username)).Scan(); err != nil {
-		return err
+	user := models.User{
+		Username: form.Username,
 	}
 
-	r.db.QueryRow(fmt.Sprintf(
-		"INSERT INTO `profiles` (`username`, `name`) VALUES ('%s', '%s')",
-		form.Username, form.Name))
+	profile := models.Profile{
+		Username:  form.Username,
+		Name:      form.Name,
+		CreatedAt: "2023-02-19 00:00:00",
+		UpdatedAt: "2023-02-19 00:00:00",
+	}
 
-	if err := r.db.QueryRow(fmt.Sprintf("SELECT `id` FROM `profiles` WHERE `username` = '%s' and `name` = '%s'", form.Username, form.Name)).Scan(); err != nil {
-		return err
+	if res := r.db.Take(&user); res.RowsAffected != 1 {
+		return gorm.ErrRecordNotFound
+	}
+
+	if res := r.db.Create(&profile); res.RowsAffected != 1 {
+		return gorm.ErrInvalidTransaction
 	}
 
 	return nil
 }
 
 func (r *ProfileRepo) GetAll(isActive bool) ([]models.Profile, error) {
-	res, err := r.db.Query("SELECT id, username, name FROM `profiles` WHERE is_active = ?", isActive)
-	if err != nil {
-		return nil, err
-	}
-
 	var profiles []models.Profile
-	for res.Next() {
-		var profile models.Profile
-		err = res.Scan(
-			&profile.ID,
-			&profile.Username,
-			&profile.Name,
-		)
-		if err != nil {
-			return nil, err
-		}
 
-		profiles = append(profiles, profile)
+	if err := r.db.Where("is_active = ?", isActive).Find(&profiles).Error; err != nil {
+		return nil, err
 	}
 
 	return profiles, nil
