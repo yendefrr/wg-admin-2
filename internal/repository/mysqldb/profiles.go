@@ -21,15 +21,20 @@ func (r *ProfileRepo) Create(form models.ProfileCreateForm) error {
 	}
 
 	profile := models.Profile{
-		Username:  form.Username,
-		Name:      form.Name,
-		CreatedAt: "2023-02-19 00:00:00",
-		UpdatedAt: "2023-02-19 00:00:00",
+		Username: form.Username,
+		Name:     form.Name,
+	}
+
+	if res := r.db.Take(&profile); res.RowsAffected == 1 {
+		return gorm.ErrInvalidData
 	}
 
 	if res := r.db.Take(&user); res.RowsAffected != 1 {
 		return gorm.ErrRecordNotFound
 	}
+
+	profile.CreatedAt = "2023-01-01 00:00:00"
+	profile.UpdatedAt = "2023-01-01 00:00:00"
 
 	if res := r.db.Create(&profile); res.RowsAffected != 1 {
 		return gorm.ErrInvalidTransaction

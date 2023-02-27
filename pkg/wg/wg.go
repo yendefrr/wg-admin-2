@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -39,6 +40,26 @@ func RemovePear(pubKey string, id int, pathToConf string, pathToImages string) e
 
 	err = os.WriteFile(pathToConf, []byte(output), 0777)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func KeyGen() (string, string, error) {
+	privatekey, err := exec.Command("wg", "genkey").Output()
+	publickey, err := exec.Command("wg", "pubkey").Output()
+
+	if err != nil {
+		return "", "", err
+	}
+
+	return string(publickey), string(privatekey), nil
+}
+
+func RestartServer() error {
+	cmd := exec.Command("systemctl", "restart", "wg-quick@wg0")
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 

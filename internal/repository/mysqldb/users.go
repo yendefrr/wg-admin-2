@@ -18,9 +18,14 @@ func NewUsersRepo(db *gorm.DB) *UsersRepo {
 func (r *UsersRepo) Create(form models.UserCreateForm) error {
 	user := models.User{
 		Username: form.Username,
-		Password: form.Password,
-		Role:     form.Role,
 	}
+
+	if res := r.db.Take(&user); res.RowsAffected == 1 {
+		return gorm.ErrInvalidData
+	}
+
+	user.PasswordHash = form.Password //TODO: hash password
+	user.Role = form.Role
 
 	if res := r.db.Create(&user); res.RowsAffected != 1 {
 		return gorm.ErrInvalidTransaction
